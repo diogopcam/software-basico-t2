@@ -15,7 +15,7 @@ typedef struct {
     void *pool;
     size_t total_size;
     allocation_t *head;
-    Strategy strategy;  // Adicionado conforme especificação
+    Strategy strategy;
 } mymemory_t;
 
 // Interface de funções

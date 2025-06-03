@@ -35,12 +35,10 @@ static void* find_first_fit(mymemory_t *memory, size_t size, allocation_t **prev
     void *pool_start = memory->pool;
     void *pool_end = (char*)memory->pool + memory->total_size;
 
-    // Check space before first allocation
     if (current && (char*)current->start - (char*)pool_start >= (ptrdiff_t)size) {
         return current;
     }
 
-    // Check spaces between allocations
     while (current) {
         void *block_end = (char*)current->start + current->size;
         allocation_t *next = current->next;
@@ -54,10 +52,9 @@ static void* find_first_fit(mymemory_t *memory, size_t size, allocation_t **prev
         current = next;
     }
 
-    // Check space after last allocation
     if (!memory->head) {
         if (memory->total_size >= size) {
-            return NULL; // Allocate at start
+            return NULL;
         }
     } else {
         allocation_t *last = memory->head;
@@ -77,12 +74,11 @@ static void* find_best_fit(mymemory_t *memory, size_t size, allocation_t **prev)
     *prev = NULL;
     void *best_block = NULL;
     allocation_t *best_prev = NULL;
-    size_t best_size = memory->total_size + 1; // Initialize with impossible value
+    size_t best_size = memory->total_size + 1;
 
     void *pool_start = memory->pool;
     void *pool_end = (char*)memory->pool + memory->total_size;
 
-    // Check space before first allocation
     if (current) {
         size_t available = (char*)current->start - (char*)pool_start;
         if (available >= size && available < best_size) {
@@ -92,7 +88,6 @@ static void* find_best_fit(mymemory_t *memory, size_t size, allocation_t **prev)
         }
     }
 
-    // Check spaces between allocations
     while (current) {
         void *block_end = (char*)current->start + current->size;
         allocation_t *next = current->next;
@@ -108,7 +103,6 @@ static void* find_best_fit(mymemory_t *memory, size_t size, allocation_t **prev)
         current = next;
     }
 
-    // Check space after last allocation
     if (memory->head) {
         allocation_t *last = memory->head;
         while (last->next) last = last->next;
@@ -121,7 +115,6 @@ static void* find_best_fit(mymemory_t *memory, size_t size, allocation_t **prev)
             best_prev = last;
         }
     } else {
-        // No allocations yet - check entire pool
         if (memory->total_size >= size && memory->total_size < best_size) {
             best_size = memory->total_size;
             best_block = NULL;
@@ -143,17 +136,15 @@ static void* find_worst_fit(mymemory_t *memory, size_t size, allocation_t **prev
     void *pool_start = memory->pool;
     void *pool_end = (char*)memory->pool + memory->total_size;
 
-    // Verifica espaço antes do primeiro bloco
     if (current) {
         size_t available = (char*)current->start - (char*)pool_start;
         if (available >= size && available > worst_size) {
             worst_size = available;
-            worst_block = current;  // Próximo bloco é o primeiro
-            worst_prev = NULL;      // Nenhum bloco anterior
+            worst_block = current;
+            worst_prev = NULL;
         }
     }
 
-    // Verifica espaços entre blocos
     while (current) {
         void *block_end = (char*)current->start + current->size;
         allocation_t *next = current->next;
@@ -162,14 +153,13 @@ static void* find_worst_fit(mymemory_t *memory, size_t size, allocation_t **prev
 
         if (available >= size && available > worst_size) {
             worst_size = available;
-            worst_block = next;     // Próximo bloco é o "next"
-            worst_prev = current;   // Bloco anterior é o "current"
+            worst_block = next;
+            worst_prev = current;
         }
 
         current = next;
     }
 
-    // Verifica espaço após o último bloco
     if (memory->head) {
         allocation_t *last = memory->head;
         while (last->next) last = last->next;
@@ -178,11 +168,10 @@ static void* find_worst_fit(mymemory_t *memory, size_t size, allocation_t **prev
 
         if (available >= size && available > worst_size) {
             worst_size = available;
-            worst_block = NULL;     // Não há bloco seguinte
-            worst_prev = last;      // Bloco anterior é o último
+            worst_block = NULL;
+            worst_prev = last;
         }
     } else {
-        // Pool vazio: usa todo o espaço
         if (memory->total_size >= size) {
             worst_block = NULL;
             worst_prev = NULL;
@@ -190,13 +179,12 @@ static void* find_worst_fit(mymemory_t *memory, size_t size, allocation_t **prev
     }
 
     *prev = worst_prev;
-    return worst_block;  // Retorna o bloco seguinte ao espaço livre
+    return worst_block;
 }
 
 void* mymemory_alloc(mymemory_t *memory, size_t size) {
     if (!memory || size == 0) return NULL;
 
-    // Aplica alinhamento
     size_t aligned_size = align_size(size);
 
     allocation_t *prev = NULL;
@@ -245,12 +233,11 @@ void* mymemory_alloc(mymemory_t *memory, size_t size) {
     new_alloc->start = alloc_start;
     new_alloc->size = size;
     
-    // Correção na lógica de encadeamento:
     if (prev == NULL) {
-        new_alloc->next = memory->head;  // Mantém o restante da lista
+        new_alloc->next = memory->head; 
         memory->head = new_alloc;
     } else {
-        new_alloc->next = prev->next;    // Insere no meio corretamente
+        new_alloc->next = prev->next;
         prev->next = new_alloc;
     }
 
