@@ -7,11 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Declaração da função align_size no início do arquivo
 static size_t align_size(size_t size) {
     const size_t ALIGNMENT = 8; // Alinhamento de 8 bytes
     return (size + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
-}
+} 
 
 mymemory_t* mymemory_init(size_t size, Strategy strategy) {
     mymemory_t *memory = (mymemory_t*)malloc(sizeof(mymemory_t));
@@ -29,22 +28,33 @@ mymemory_t* mymemory_init(size_t size, Strategy strategy) {
     return memory;
 }
 
+// Função que implementa a estratégia First Fit para alocação de memória
 static void* find_first_fit(mymemory_t *memory, size_t size, allocation_t **prev) {
+    // Começa pelo primeiro bloco alocado na memória
     allocation_t *current = memory->head;
+    // Inicializa o ponteiro para o bloco anterior como NULL
     *prev = NULL;
+    
+    // Define os limites do pool de memória
     void *pool_start = memory->pool;
     void *pool_end = (char*)memory->pool + memory->total_size;
 
+    // Verifica se há espaço entre o início do pool e o primeiro bloco alocado
     if (current && (char*)current->start - (char*)pool_start >= (ptrdiff_t)size) {
+        // Se houver espaço suficiente antes do primeiro bloco, retorna o primeiro bloco
+        // (indicando que o espaço livre está antes dele)
         return current;
     }
 
+    // Percorre a lista de blocos alocados
     while (current) {
         void *block_end = (char*)current->start + current->size;
         allocation_t *next = current->next;
         void *next_start = next ? next->start : pool_end;
         
+        // Verifica se o espaço entre o bloco atual e o próximo é suficiente
         if ((char*)next_start - (char*)block_end >= (ptrdiff_t)size) {
+            // Se for, armazena o bloco atual como 'prev' e retorna o próximo bloco
             *prev = current;
             return next;
         }
@@ -53,14 +63,20 @@ static void* find_first_fit(mymemory_t *memory, size_t size, allocation_t **prev
     }
 
     if (!memory->head) {
+         // Se não há blocos alocados, verifica se o pool inteiro está livre
         if (memory->total_size >= size) {
             return NULL;
         }
     } else {
+         // Se houver blocos alocados, verifica o espaço após o último bloco
         allocation_t *last = memory->head;
         while (last->next) last = last->next;
+        // Calcula o fim do último bloco
         void *last_end = (char*)last->start + last->size;
+        // Verifica se há espaço após o último bloco
         if ((char*)pool_end - (char*)last_end >= (ptrdiff_t)size) {
+            // Se houver, armazena o último bloco como 'prev' e retorna NULL
+            // (indicando que o espaço livre está após o último bloco)
             *prev = last;
             return NULL;
         }
@@ -69,6 +85,7 @@ static void* find_first_fit(mymemory_t *memory, size_t size, allocation_t **prev
     return NULL;
 }
 
+// Realiza a alocacao na menor lacuna suficientemente grande
 static void* find_best_fit(mymemory_t *memory, size_t size, allocation_t **prev) {
     allocation_t *current = memory->head;
     *prev = NULL;
@@ -205,12 +222,12 @@ void* mymemory_alloc(mymemory_t *memory, size_t size) {
     void *alloc_start = NULL;
     if (prev == NULL) {
         if (next_block == NULL) {
-            // Allocate at start of pool
+            // Aloca no início do pool
             if (memory->total_size < size) return NULL;
             alloc_start = memory->pool;
             printf("Alocando %zu bytes em %p\n", size, alloc_start);
         } else {
-            // Allocate before first block
+            // Aloca antes do primeiro bloco
             if ((char*)next_block->start - (char*)memory->pool < (ptrdiff_t)size)
                 return NULL;
             alloc_start = memory->pool;
@@ -331,7 +348,7 @@ void mymemory_stats(mymemory_t *memory) {
     size_t total_alloc, total_free, largest_free, fragments;
     calculate_stats(memory, &total_alloc, &total_free, &largest_free, &fragments);
 
-    // Count active allocations
+    // Contagem de alocações ativas
     size_t active_allocs = 0;
     allocation_t *current = memory->head;
     while (current) {
